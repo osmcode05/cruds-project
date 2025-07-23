@@ -1,50 +1,58 @@
+import { useContext } from "react";
+import { AppContext } from "../App";
 import { FaTrash, FaPen } from "react-icons/fa";
 
-export default function ReadDataCmp({ Products, handleDeleteItem, handleEditItem }) {
+export default function ReadDataCmp() {
+  const { products, handleDeleteItem, handleEditItem } = useContext(AppContext);
+
+  const headers = [
+    "Id",
+    "Title",
+    "Price",
+    "Taxes",
+    "Ads",
+    "Discount",
+    "Total",
+    "Category",
+    "Edit",
+    "Delete",
+  ];
+
   return (
     <table>
-      
-        <thead>
+      <thead>
+        <tr>
+          {headers.map((h) => (
+            <td key={h}>{h}</td>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {products.length ? (
+          products.map((p, i) => (
+            <tr key={i}>
+              <td>{i + 1}</td>
+              <td>{p.title}</td>
+              {["price", "taxes", "ads", "discount", "total"].map((f) => (
+                <td key={f}>{p[f] || 0}</td>
+              ))}
+              <td>{p.category}</td>
+              <td>
+                <FaPen onClick={() => handleEditItem(i)} />
+              </td>
+              <td>
+                <FaTrash onClick={() => handleDeleteItem(i)} />
+              </td>
+            </tr>
+          ))
+        ) : (
           <tr>
-            <td>Id</td>
-            <td>Title</td>
-            <td>Price</td>
-            <td>Taxes</td>
-            <td>Ads</td>
-            <td>Discount</td>
-            <td>Total</td>
-            <td>Category</td>
-            <td>Edit</td>
-            <td>Delete</td>
+            <td colSpan={headers.length} className="No_Product">
+              <i>No Products</i>
+            </td>
           </tr>
-        </thead>
-      
-        <tbody>
-          {Products.length ? (
-            Products.map((product, index) => {
-              return (
-                <tr key={index}>
-                  <td>{index + 1}</td>
-                  <td>{product.title}</td>
-                  <td>{product.price}</td>
-                  <td>{product.taxes || 0}</td>
-                  <td>{product.ads || 0}</td>
-                  <td>{product.discount || 0}</td>
-                  <td>{product.total || 0}</td>
-                  <td>{product.category}</td>
-                  <td>
-                    <FaPen id="Edit" onClick={() => handleEditItem(index)} />
-                  </td>
-                  <td>
-                    <FaTrash id="delete" onClick={() => handleDeleteItem(index)} />
-                  </td>
-                </tr>
-              );
-            })
-          ) : (
-            <tr><td colSpan="10" className="No_Product"><i>No Products</i></td></tr>
-          )}
-        </tbody>
-      </table>
+        )}
+      </tbody>
+    </table>
   );
 }

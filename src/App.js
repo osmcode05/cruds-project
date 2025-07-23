@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, createContext, useCallback } from "react";
 import CreateCmp from "./Components/CreateCmp";
 import SearchCmp from "./Components/SearchCmp";
 import ReadDataCmp from "./Components/ReadDataCmp";
 
-let defaultobjProduct = {
+export const AppContext = createContext();
+
+const defaultProduct = {
   title: "",
   price: "",
   taxes: "",
@@ -13,96 +15,105 @@ let defaultobjProduct = {
   count: "",
   category: "",
 };
-let editIndex;
 
 export default function App() {
-  const [Products, setProducts] = useState(
+  const [products, setProducts] = useState(
     localStorage.UserProducts ? JSON.parse(localStorage.UserProducts) : []
   );
-  useEffect(() => {
-    localStorage.UserProducts = JSON.stringify(Products);
-  }, [Products]);
-  const [objProduct, setObjProduct] = useState(defaultobjProduct);
-  const [Mood, setMood] = useState("Create");
+  const [product, setProduct] = useState(defaultProduct);
+  const [mood, setMood] = useState("Create");
   const [search, setSearch] = useState("");
   const [searchBy, setSearchBy] = useState("");
 
+  useEffect(() => {
+    localStorage.setItem("UserProducts", JSON.stringify(products));
+  }, [products]);
 
-  const CreateEditClick = () => {
-    if (objProduct.title && objProduct.price && objProduct.category) {
-      if (Mood === "Create") {
-        setProducts([...Products, ...Array(objProduct.count || 1).fill(objProduct)]);
-      } else {
-        const EditProducts = [...Products];
-        EditProducts[editIndex] = objProduct;
-        setProducts(EditProducts);
-        setMood("Create");
-        console.log(editIndex);
-      }
-      setObjProduct(defaultobjProduct);
-    } else {
-      alert(
-        "Please you should enter the title, the price and the category of the product"
-      );
-    }
-  };
+  const calculateTotal = useCallback((updatedProduct) => {
+    const { price = 0, taxes = 0, ads = 0, discount = 0 } = updatedProduct;
+    setProduct(() => ({
+      ...updatedProduct,
+      total: +price + +taxes + +ads - +discount,
+    }));
+  }, []);
 
-  const calculTotal = (updatedObjProduct) => {
-    const { price, taxes, ads, discount } = updatedObjProduct;
-    setObjProduct({ ...updatedObjProduct, total: price + taxes + ads - discount });
-  };
+const createEditClick = useCallback(() => {
+  if (!product.title || !product.price || !product.category) {
+    return alert("Please enter title, price, and category");
+  }
 
-  const handleDeleteItem = (index) => {
-    setProducts(Products.filter((_, i) => i !== index));
-  };
+  if (mood === "Create") {
+    // Create multiple products when count > 1
+    const newProducts = Array.from({ length: product.count || 1 }, () => ({
+      ...product,
+    }));
+    setProducts((prev) => [...prev, ...newProducts]);
+  } else {
+    // Edit mode - only update the single product
+    setProducts((prev) => prev.map((p, i) => (i === editIndex ? product : p)));
+    setMood("Create");
+  }
+  setProduct(defaultProduct);
+}, [product, mood]);
 
-  const handleEditItem = (index) => {
-    editIndex = index;
-    setObjProduct(Products[index]);
-    setMood("Edit");
-  };
+  const handleDeleteItem = useCallback((index) => {
+    setProducts((prev) => prev.filter((_, i) => i !== index));
+  }, []);
 
-  const handleDeleteAllItem = () => {
+  const handleEditItem = useCallback(
+    (index) => {
+      editIndex = index;
+      setProduct(products[index]);
+      setMood("Edit");
+    },
+    [products]
+  );
+
+  const handleDeleteAll = useCallback(() => {
     setProducts([]);
-    setObjProduct(defaultobjProduct);
+    setProduct(defaultProduct);
     setMood("Create");
     setSearch("");
     setSearchBy("");
+  }, []);
+
+  const filteredProducts = products.filter((p) =>
+    (searchBy === "Search by Category" ? p.category : p.title)
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  );
+
+  const contextValue = {
+    product,
+    setProduct,
+    mood,
+    createEditClick,
+    calculateTotal,
+    search,
+    setSearch,
+    searchBy,
+    setSearchBy,
+    products: filteredProducts,
+    handleDeleteItem,
+    handleEditItem,
   };
 
-  const filteredProducts = Products.filter((product) =>
-    (searchBy === "Search by Category" ? product.category : product.title).toLowerCase().includes(search.toLowerCase())
-  );
-
   return (
-    <section>
-      <CreateCmp
-        objProduct={objProduct}
-        setObjProduct={setObjProduct}
-        Mood={Mood}
-        CreateEditClick={CreateEditClick}
-        calculTotal={calculTotal}
-      />
-
-      {Products.length > 0 && (
-        <>
-          <SearchCmp
-            search={search}
-            setSearch={setSearch}
-            searchBy={searchBy}
-            setSearchBy={setSearchBy}
-          />
-          <button onClick={handleDeleteAllItem}>
-            Delete All ( {Products.length} )
-          </button>
-        </>
-      )}
-
-      <ReadDataCmp
-        Products={filteredProducts}
-        handleDeleteItem={handleDeleteItem}
-        handleEditItem={handleEditItem}
-      />
-    </section>
+    <AppContext.Provider value={contextValue}>
+      <section>
+        <CreateCmp />
+        {products.length > 0 && (
+          <>
+            <SearchCmp />
+            <button onClick={handleDeleteAll}>
+              Delete All ({products.length})
+            </button>
+          </>
+        )}
+        <ReadDataCmp />
+      </section>
+    </AppContext.Provider>
   );
 }
+
+let editIndex;

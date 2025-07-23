@@ -1,11 +1,13 @@
-import { useRef } from "react";
+import { useContext, useRef } from "react";
+import { AppContext } from "../App";
 
-export default function SearchCmp({ search, setSearch, setSearchBy, searchBy }) {
+export default function SearchCmp() {
+  const { search, setSearch, setSearchBy, searchBy } = useContext(AppContext);
   const inpRef = useRef(null);
 
-  const handleToSearchBy = (label) => {
+  const handleSearchBy = (type) => {
     inpRef.current.focus();
-    setSearchBy(`Search by ${label}`);
+    setSearchBy(`Search by ${type}`);
   };
 
   return (
@@ -18,8 +20,11 @@ export default function SearchCmp({ search, setSearch, setSearchBy, searchBy }) 
         onChange={(e) => setSearch(e.target.value)}
       />
       <div className="row_btn">
-        <button onClick={() => handleToSearchBy("Title")}>Search by Title</button>
-        <button onClick={() => handleToSearchBy("Category")}>Search by Category</button>
+        {["Title", "Category"].map((type) => (
+          <button key={type} onClick={() => handleSearchBy(type)}>
+            Search by {type}
+          </button>
+        ))}
       </div>
     </div>
   );
