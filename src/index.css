@@ -113,7 +113,6 @@ td {
   color: #434141;
 }
 #Edit,#delete {
-  font-size: 1rem;
   color: var(--light-purple-color);
 }
 /* ===================== BREAKPOINTS ================== */

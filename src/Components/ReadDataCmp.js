@@ -38,10 +38,10 @@ export default function ReadDataCmp() {
               ))}
               <td>{p.category}</td>
               <td>
-                <FaPen onClick={() => handleEditItem(i)} />
+                <FaPen id="Edit" onClick={() => handleEditItem(i)} />
               </td>
               <td>
-                <FaTrash onClick={() => handleDeleteItem(i)} />
+                <FaTrash id="delete" onClick={() => handleDeleteItem(i)} />
               </td>
             </tr>
           ))
